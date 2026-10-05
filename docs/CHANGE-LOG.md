@@ -1,5 +1,28 @@
 # Backend Changelog
 
+## 2026-10-05 — Complete Backend Modules Implementation & Security Hardening (feature)
+- **Date**: 2026-10-05
+- **Type**: feature / security / architecture
+- **Problem**: 
+  - Express server lacked backend module endpoints matching frontend requirements (Campaigns, Donations, Inquiries/Contact/Volunteer, Team, Impact).
+  - Lack of rate limiting on public form submission endpoints.
+  - Absence of input sanitization and payload field validation utilities.
+- **Design / Solution**:
+  - Implemented `src/data/initialData.js` providing seed fallback data for offline/standalone execution.
+  - Implemented `src/middleware/rateLimiter.js` for DDoS & submission abuse protection.
+  - Implemented `src/middleware/validate.js` for input sanitization (XSS protection), email, PAN (80G tax receipt), and phone validation.
+  - Implemented `src/controllers/campaignController.js` (`GET /api/campaigns`, `GET /api/campaigns/:id`, `POST /api/campaigns`).
+  - Implemented `src/controllers/donationController.js` (`POST /api/donations`, `GET /api/donations/recent`).
+  - Implemented `src/controllers/inquiryController.js` (`POST /api/inquiries/contact`, `POST /api/inquiries/volunteer`).
+  - Implemented `src/controllers/metaController.js` (`GET /api/team`, `GET /api/impact`).
+  - Mounted public module routers in `src/routes/index.js` and updated `.expressguard.json`.
+  - Added native Node test suites in `tests/` covering all 16 endpoint scenarios.
+  - Created frontend API client service layer in `help-a-mission-frontend/src/lib/api.ts`.
+- **Status**: done
+- **Verified**:
+  - `npm test`: 16/16 tests passed (100% pass rate)
+  - `npm run build` (frontend): passed with 0 errors
+
 ## 2026-10-05 — Standards and Security Hardening (feature)
 - **Date**: 2026-10-05
 - **Type**: security / architecture

@@ -2,7 +2,17 @@
   "public_routes": [
     "/",
     "/api/health",
-    "/api/health/"
+    "/api/health/",
+    "/api/campaigns",
+    "/api/campaigns/",
+    "/api/campaigns/:id",
+    "/api/donations",
+    "/api/donations/",
+    "/api/donations/recent",
+    "/api/inquiries/contact",
+    "/api/inquiries/volunteer",
+    "/api/team",
+    "/api/impact"
   ],
   "fail_on": "high"
 }
