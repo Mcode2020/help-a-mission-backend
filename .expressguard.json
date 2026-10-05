@@ -1,0 +1,8 @@
+{
+  "public_routes": [
+    "/",
+    "/api/health",
+    "/api/health/"
+  ],
+  "fail_on": "high"
+}

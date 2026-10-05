@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import healthRoutes from './healthRoutes.js';
+import publicHealthRoutes from './public/health.routes.js';
 
 const router = Router();
 
-// Mount API routes
-router.use('/health', healthRoutes);
+// SECURITY: Public routes mounted explicitly on dedicated public router
+router.use('/health', publicHealthRoutes);
 
 export default router;

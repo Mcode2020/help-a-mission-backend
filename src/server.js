@@ -1,10 +1,9 @@
-import dotenv from 'dotenv';
 import app from './app.js';
+import { env } from './config/env.js';
 import { connectToMongoDB, disconnectFromMongoDB } from './config/db.js';
+import { logger } from './security/logger.js';
 
-dotenv.config();
-
-const PORT = process.env.PORT || 5000;
+const PORT = env.PORT;
 
 async function startServer() {
   try {
@@ -13,15 +12,15 @@ async function startServer() {
 
     // Start Express HTTP Server
     const server = app.listen(PORT, () => {
-      console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on http://localhost:${PORT}`);
+      logger.info(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     });
 
     // Graceful Shutdown handling
     const shutdown = async (signal) => {
-      console.log(`\n${signal} signal received: closing HTTP server and Database connection...`);
+      logger.info(`${signal} signal received: closing HTTP server and Database connection`);
       server.close(async () => {
         await disconnectFromMongoDB();
-        console.log('👋 Process terminated successfully.');
+        logger.info('Process terminated gracefully');
         process.exit(0);
       });
     };
@@ -30,7 +29,7 @@ async function startServer() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   } catch (error) {
-    console.error('❌ Failed to start server:', error);
+    logger.error('Failed to start server', { error: error.message });
     process.exit(1);
   }
 }

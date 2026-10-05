@@ -33,3 +33,8 @@ Thumbs.db
 # Build / Output
 dist/
 build/
+coverage/
+
+# Local Machine Memory
+.cursor/
+
