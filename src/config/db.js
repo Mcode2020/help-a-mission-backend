@@ -1,32 +1,39 @@
 import { MongoClient } from 'mongodb';
-import dotenv from 'dotenv';
+import { env } from './env.js';
+import { logger } from '../security/logger.js';
 
-dotenv.config();
-
-const uri = process.env.MONGODB_URI;
-const dbName = process.env.DB_NAME || 'help_a_mission_db';
+const uri = env.MONGODB_URI;
+const dbName = env.DB_NAME;
 
 if (!uri) {
-  console.error('CRITICAL: MONGODB_URI is missing in environment variables (.env file).');
+  logger.warn('MONGODB_URI is not set. Database features will be unavailable in this session.');
 }
 
-const client = new MongoClient(uri);
+const client = uri ? new MongoClient(uri) : null;
 let dbInstance = null;
 
 /**
  * Connects to MongoDB cluster and initializes DB instance
  */
 export async function connectToMongoDB() {
+  if (!client) {
+    logger.warn('Skipping MongoDB connection: no MONGODB_URI configured.');
+    return null;
+  }
+
   try {
     if (!dbInstance) {
       await client.connect();
       dbInstance = client.db(dbName);
-      console.log(`✅ Successfully connected to MongoDB database: "${dbInstance.databaseName}"`);
+      logger.info(`Successfully connected to MongoDB database: "${dbInstance.databaseName}"`);
     }
     return dbInstance;
   } catch (err) {
-    console.error('❌ Failed to connect to MongoDB:', err.message);
-    process.exit(1);
+    logger.error('Failed to connect to MongoDB', { error: err.message });
+    if (env.NODE_ENV === 'production') {
+      process.exit(1);
+    }
+    return null;
   }
 }
 
@@ -53,6 +60,6 @@ export function getClient() {
 export async function disconnectFromMongoDB() {
   if (client) {
     await client.close();
-    console.log('🔌 MongoDB connection closed.');
+    logger.info('MongoDB connection closed.');
   }
 }

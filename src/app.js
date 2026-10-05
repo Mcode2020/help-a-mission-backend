@@ -1,18 +1,29 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import routes from './routes/index.js';
 import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
+import { env } from './config/env.js';
 
 const app = express();
 
-// Enable Cross-Origin Resource Sharing
-app.use(cors());
+// SECURITY: helmet — adds CSP/HSTS/nosniff/frame headers and hides the Express fingerprint
+app.use(helmet());
 
-// Parse incoming JSON and URL-encoded payloads
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// SECURITY: disable x-powered-by — prevents technology fingerprinting
+app.disable('x-powered-by');
 
-// Root Route
+// SECURITY: cors allow-list configuration
+app.use(cors({
+  origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN,
+  credentials: true
+}));
+
+// SECURITY: explicit size limits — one oversized request can exhaust memory (OWASP API4)
+app.use(express.json({ limit: '100kb' }));
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
+
+// SECURITY: Public root health endpoint
 app.get('/', (req, res) => {
   res.json({
     status: 'success',
@@ -21,7 +32,7 @@ app.get('/', (req, res) => {
   });
 });
 
-// Register API Routes
+// Register Categorized API Routes
 app.use('/api', routes);
 
 // 404 Route Handler
