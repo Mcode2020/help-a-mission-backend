@@ -1,44 +1,85 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import routes from './routes/index.js';
-import { notFoundHandler, errorHandler } from './middleware/errorHandler.js';
+import cookieParser from 'cookie-parser';
 import { env } from './config/env.js';
+import { requestIdMiddleware } from './middleware/request-id.js';
+import { notFoundHandler, errorHandler } from './middleware/error-handler.js';
+
+import adminAuthRoutes from './modules/admin-auth/admin-auth.routes.js';
+import adminRbacRoutes from './modules/admin-rbac/admin-rbac.routes.js';
+import cmsRoutes from './modules/cms/cms.routes.js';
+import initiativesRoutes from './modules/initiatives/initiatives.routes.js';
+import galleryRoutes from './modules/gallery/gallery.routes.js';
+import mediaRoutes from './modules/media/media.routes.js';
+import donationsRoutes from './modules/donations/donations.routes.js';
+import webhooksRoutes from './modules/webhooks/webhooks.routes.js';
+import adminReportsRoutes from './modules/admin-reports/admin-reports.routes.js';
+import { cmsController } from './modules/cms/cms.controller.js';
 
 const app = express();
 
-// SECURITY: helmet — adds CSP/HSTS/nosniff/frame headers and hides the Express fingerprint
+// SECURITY: Helmet security headers
 app.use(helmet());
 
-// SECURITY: disable x-powered-by — prevents technology fingerprinting
+// SECURITY: Disable Express signature header
 app.disable('x-powered-by');
 
-// SECURITY: cors allow-list configuration
+// SECURITY: Attach unique request ID to all incoming requests
+app.use(requestIdMiddleware);
+
+// SECURITY: Cookie parser for reading session cookies
+app.use(cookieParser(env.COOKIE_SECRET));
+
+// SECURITY: CORS policy with explicit credentials support for cookies
 app.use(cors({
   origin: env.CORS_ORIGIN === '*' ? true : env.CORS_ORIGIN,
-  credentials: true
+  credentials: true,
 }));
 
-// SECURITY: explicit size limits — one oversized request can exhaust memory (OWASP API4)
+// Webhook raw body endpoint registered BEFORE JSON parser middleware
+app.use('/api/v1', webhooksRoutes);
+
+// SECURITY: Request body size limits (OWASP API4)
 app.use(express.json({ limit: '100kb' }));
 app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
-// SECURITY: Public root health endpoint
+// Health Check Endpoints
 app.get('/', (req, res) => {
   res.json({
-    status: 'success',
-    message: 'Help A Mission Welfare Society Backend API is running successfully!',
-    docs: '/api/health'
+    success: true,
+    message: 'Help A Mission Welfare Society Backend API is running.',
+    version: 'v1.0.0',
+    docs: '/api/v1/health',
   });
 });
 
-// Register Categorized API Routes
-app.use('/api', routes);
+app.get('/api/v1/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'UP',
+    timestamp: new Date().toISOString(),
+    env: env.NODE_ENV,
+  });
+});
+
+// Public Homepage Endpoint
+app.get('/api/v1/public/home', cmsController.getPublicHome);
+
+// API v1 Modules
+app.use('/api/v1/admin/auth', adminAuthRoutes);
+app.use('/api/v1/admin/rbac', adminRbacRoutes);
+app.use('/api/v1', cmsRoutes);
+app.use('/api/v1', initiativesRoutes);
+app.use('/api/v1', galleryRoutes);
+app.use('/api/v1', mediaRoutes);
+app.use('/api/v1', donationsRoutes);
+app.use('/api/v1', adminReportsRoutes);
 
 // 404 Route Handler
 app.use(notFoundHandler);
 
-// Global Error Handler
+// Centralized Error Handler
 app.use(errorHandler);
 
 export default app;

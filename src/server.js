@@ -1,27 +1,36 @@
 import app from './app.js';
-import { env } from './config/env.js';
-import { connectToMongoDB, disconnectFromMongoDB } from './config/db.js';
-import { logger } from './security/logger.js';
+import { env, validateEnv } from './config/env.js';
+import { testConnection, pool } from './database/pool.js';
 
 const PORT = env.PORT;
 
 async function startServer() {
   try {
-    // Connect to Database
-    await connectToMongoDB();
+    // 1. Validate environment configurations
+    validateEnv();
 
-    // Start Express HTTP Server
+    // 2. Test PostgreSQL database connection
+    console.log('Connecting to PostgreSQL database...');
+    await testConnection();
+
+    // 3. Start Express HTTP Server
     const server = app.listen(PORT, () => {
-      logger.info(`Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`[SERVER] Express backend running in ${env.NODE_ENV} mode on port ${PORT}`);
+      console.log(`[SERVER] API Endpoint base: http://localhost:${PORT}/api/v1`);
     });
 
-    // Graceful Shutdown handling
+    // 4. Graceful Shutdown handler
     const shutdown = async (signal) => {
-      logger.info(`${signal} signal received: closing HTTP server and Database connection`);
+      console.log(`\n${signal} signal received: Closing HTTP server and PostgreSQL pool...`);
       server.close(async () => {
-        await disconnectFromMongoDB();
-        logger.info('Process terminated gracefully');
-        process.exit(0);
+        try {
+          await pool.end();
+          console.log('[SERVER] PostgreSQL pool closed gracefully.');
+          process.exit(0);
+        } catch (err) {
+          console.error('[ERROR] Error closing PostgreSQL pool:', err);
+          process.exit(1);
+        }
       });
     };
 
@@ -29,7 +38,7 @@ async function startServer() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
 
   } catch (error) {
-    logger.error('Failed to start server', { error: error.message });
+    console.error('[CRITICAL] Failed to start server:', error.message);
     process.exit(1);
   }
 }

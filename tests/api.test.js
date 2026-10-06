@@ -1,108 +1,130 @@
 import test from 'node:test';
-import assert from 'node:assert';
+import assert from 'node:assert/strict';
 import request from 'supertest';
 import app from '../src/app.js';
+import db from '../src/database/knex.client.js';
+import { AdminModel } from '../src/database/models/admin.model.js';
 
-test('GET /api/campaigns returns active campaigns list', async () => {
-  const res = await request(app).get('/api/campaigns');
-  assert.strictEqual(res.status, 200);
-  assert.strictEqual(res.body.status, 'success');
-  assert.ok(Array.isArray(res.body.data));
-  assert.ok(res.body.data.length > 0);
-  assert.strictEqual(res.body.data[0].slug, 'blood-donation-camps');
-});
+test('Admin Auth API v1 Endpoint Integration Suite', async (t) => {
+  let sessionCookie = '';
 
-test('GET /api/campaigns/:slug returns single campaign detail', async () => {
-  const res = await request(app).get('/api/campaigns/blood-donation-camps');
-  assert.strictEqual(res.status, 200);
-  assert.strictEqual(res.body.status, 'success');
-  assert.strictEqual(res.body.data.slug, 'blood-donation-camps');
-  assert.ok(res.body.data.progressPercent >= 0);
-});
+  t.before(async () => {
+    // Ensure test admin exists
+    try {
+      await AdminModel.createAdmin({
+        email: 'admin@helpamission.org',
+        password: 'SuperAdminPassword123!',
+        roleKeys: ['super_admin'],
+      });
+    } catch {
+      // Ignored if already exists
+    }
+  });
 
-test('GET /api/campaigns/invalid-slug returns 404', async () => {
-  const res = await request(app).get('/api/campaigns/non-existent-campaign');
-  assert.strictEqual(res.status, 404);
-});
+  t.after(async () => {
+    await db.destroy();
+  });
 
-test('POST /api/donations/create-order creates Razorpay simulation order', async () => {
-  const res = await request(app)
-    .post('/api/donations/create-order')
-    .send({
-      amount: 1000,
-      donorName: 'Aarav Sharma',
-      email: 'aarav@example.com',
-      phone: '9876543210',
-      pan: 'ABCDE1234F',
-      frequency: 'once',
-      campaignId: 'blood-donation-camps',
-    });
+  await t.test('POST /api/v1/admin/auth/login succeeds with valid Super Admin credentials', async () => {
+    const res = await request(app)
+      .post('/api/v1/admin/auth/login')
+      .send({
+        email: 'admin@helpamission.org',
+        password: 'SuperAdminPassword123!',
+      });
 
-  assert.strictEqual(res.status, 201);
-  assert.strictEqual(res.body.status, 'success');
-  assert.ok(res.body.data.donationId);
-  assert.ok(res.body.data.orderId);
-  assert.strictEqual(res.body.data.amount, 100000); // 1000 * 100 paise
-});
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(res.body.data.admin);
+    assert.equal(res.body.data.admin.email, 'admin@helpamission.org');
 
-test('POST /api/donations/verify validates simulated signature', async () => {
-  // First create order
-  const orderRes = await request(app)
-    .post('/api/donations/create-order')
-    .send({
-      amount: 500,
-      donorName: 'Priya Verma',
-      email: 'priya@example.com',
-      phone: '9812345678',
-    });
+    const cookies = res.headers['set-cookie'];
+    assert.ok(cookies, 'Set-Cookie header should be present');
+    sessionCookie = cookies[0].split(';')[0];
+  });
 
-  const { donationId, orderId } = orderRes.body.data;
-  const paymentId = 'pay_test_123456';
-  const signature = `sim_sig_${orderId}_${paymentId}`;
+  await t.test('POST /api/v1/admin/auth/login fails with invalid credentials', async () => {
+    const res = await request(app)
+      .post('/api/v1/admin/auth/login')
+      .send({
+        email: 'admin@helpamission.org',
+        password: 'WrongPassword!',
+      });
 
-  const verifyRes = await request(app)
-    .post('/api/donations/verify')
-    .send({
-      donationId,
-      orderId,
-      paymentId,
-      signature,
-    });
+    assert.equal(res.status, 401);
+    assert.equal(res.body.success, false);
+    assert.equal(res.body.error.code, 'INVALID_CREDENTIALS');
+  });
 
-  assert.strictEqual(verifyRes.status, 200);
-  assert.strictEqual(verifyRes.body.status, 'success');
-  assert.ok(verifyRes.body.receipt.certificate80G);
-});
+  await t.test('GET /api/v1/admin/auth/me returns current admin profile', async () => {
+    const res = await request(app)
+      .get('/api/v1/admin/auth/me')
+      .set('Cookie', [sessionCookie]);
 
-test('POST /api/volunteers registers volunteer application', async () => {
-  const res = await request(app)
-    .post('/api/volunteers')
-    .send({
-      fullName: 'Vikram Singh',
-      email: 'vikram@example.com',
-      phone: '9822334455',
-      city: 'Jind',
-      skills: 'First Aid & Logistics',
-      availability: 'Weekends',
-    });
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.equal(res.body.data.admin.email, 'admin@helpamission.org');
+    assert.ok(Array.isArray(res.body.data.admin.permissions));
+  });
 
-  assert.strictEqual(res.status, 201);
-  assert.strictEqual(res.body.status, 'success');
-  assert.ok(res.body.applicationId);
-});
+  await t.test('POST /api/v1/admin/auth/refresh rotates session token and returns updated session', async () => {
+    const oldCookie = sessionCookie;
 
-test('POST /api/contact records visitor inquiry', async () => {
-  const res = await request(app)
-    .post('/api/contact')
-    .send({
-      fullName: 'Sunita Rani',
-      email: 'sunita@example.com',
-      phone: '9833445566',
-      subject: 'Inquiry regarding blood camp schedule',
-      message: 'Hello, when is the next camp scheduled in Jind sector 7?',
-    });
+    const res = await request(app)
+      .post('/api/v1/admin/auth/refresh')
+      .set('Cookie', [oldCookie]);
 
-  assert.strictEqual(res.status, 201);
-  assert.strictEqual(res.body.status, 'success');
-  assert.ok(res.body.inquiryId);
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(res.body.data.expiresAt);
+    assert.equal(res.body.data.admin.email, 'admin@helpamission.org');
+
+    const cookies = res.headers['set-cookie'];
+    assert.ok(cookies, 'Set-Cookie header must be issued on session refresh');
+    const newSessionCookie = cookies[0].split(';')[0];
+    assert.notEqual(newSessionCookie, oldCookie, 'New session cookie must differ from rotated old cookie');
+
+    // Update active session cookie for subsequent requests
+    sessionCookie = newSessionCookie;
+
+    // Authenticate with new refreshed session cookie
+    const resMe = await request(app)
+      .get('/api/v1/admin/auth/me')
+      .set('Cookie', [sessionCookie]);
+
+    assert.equal(resMe.status, 200);
+    assert.equal(resMe.body.data.admin.email, 'admin@helpamission.org');
+
+    // Using the old rotated token should now fail with 401
+    const resOldTokenMe = await request(app)
+      .get('/api/v1/admin/auth/me')
+      .set('Cookie', [oldCookie]);
+
+    assert.equal(resOldTokenMe.status, 401);
+  });
+
+  await t.test('POST /api/v1/admin/auth/refresh fails without valid session', async () => {
+    const res = await request(app)
+      .post('/api/v1/admin/auth/refresh')
+      .set('Cookie', ['admin_session=invalid_token_1234567890']);
+
+    assert.equal(res.status, 401);
+    assert.equal(res.body.success, false);
+  });
+
+  await t.test('POST /api/v1/admin/auth/logout revokes session', async () => {
+    const res = await request(app)
+      .post('/api/v1/admin/auth/logout')
+      .set('Cookie', [sessionCookie]);
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+
+    // Try accessing /me again - should fail 401
+    const resMe = await request(app)
+      .get('/api/v1/admin/auth/me')
+      .set('Cookie', [sessionCookie]);
+
+    assert.equal(resMe.status, 401);
+  });
 });
