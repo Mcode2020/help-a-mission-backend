@@ -9,7 +9,10 @@ export const env = {
   PORT: parseInt(process.env.PORT || '5000', 10),
   MONGODB_URI: process.env.MONGODB_URI || '',
   DB_NAME: process.env.DB_NAME || 'help_a_mission_db',
-  CORS_ORIGIN: process.env.CORS_ORIGIN || '*'
+  CORS_ORIGIN: process.env.CORS_ORIGIN || '*',
+  RAZORPAY_KEY_ID: process.env.RAZORPAY_KEY_ID || '',
+  RAZORPAY_KEY_SECRET: process.env.RAZORPAY_KEY_SECRET || '',
+  RAZORPAY_WEBHOOK_SECRET: process.env.RAZORPAY_WEBHOOK_SECRET || ''
 };
 
 // Validate mandatory environment configs in production
