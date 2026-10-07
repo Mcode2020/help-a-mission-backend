@@ -11,6 +11,7 @@ const uploadMiddleware = multer({
 
 const router = Router();
 
+router.get('/admin/media', authenticateAdmin, requirePermission('media:read'), mediaController.list);
 router.post('/admin/media/upload', authenticateAdmin, requirePermission('media:write'), uploadMiddleware.single('file'), mediaController.upload);
 router.get('/admin/private-files/:id', authenticateAdmin, requirePermission('files:private_read'), mediaController.streamPrivateFile);
 

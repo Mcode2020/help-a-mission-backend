@@ -153,8 +153,10 @@ export class AdminModel {
       return null;
     }
 
-    // Resolve permissions dynamically
+    // Resolve permissions and roles dynamically
     const permissions = await adminRepo.getResolvedPermissions(session.admin_id);
+    const adminWithRoles = await adminRepo.getAdminWithRoles(session.admin_id);
+    const roles = (adminWithRoles?.roles || []).map((r) => r.key);
 
     // Update last seen timestamp asynchronously
     await sessionRepo.updateLastSeen(session.id);
@@ -166,6 +168,7 @@ export class AdminModel {
         email: session.email,
         authzVersion: session.authz_version,
       },
+      roles,
       permissions: new Set(permissions),
     };
   }

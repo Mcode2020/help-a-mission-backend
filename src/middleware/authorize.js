@@ -13,10 +13,18 @@ export function authorize(...requiredPermissions) {
         throw ApiError.unauthorized('Authentication required before authorization.', 'UNAUTHENTICATED');
       }
 
-      const { role, permissions = [] } = req.admin;
+      const { role, roles = [], permissions = [] } = req.admin;
 
-      // SUPER_ADMIN role or 'access:all' / 'admin:all' permission wildcard bypasses granular permission checks
-      if (role === 'SUPER_ADMIN' || permissions.includes('access:all') || permissions.includes('admin:all')) {
+      // Super Admin role or wildcard permission bypasses granular permission checks
+      if (
+        role === 'SUPER_ADMIN' ||
+        role === 'super_admin' ||
+        roles.includes('super_admin') ||
+        roles.includes('SUPER_ADMIN') ||
+        permissions.includes('access:all') ||
+        permissions.includes('admin:all') ||
+        permissions.includes('super_admin')
+      ) {
         return next();
       }
 

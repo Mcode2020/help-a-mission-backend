@@ -16,6 +16,7 @@ import donationsRoutes from './modules/donations/donations.routes.js';
 import webhooksRoutes from './modules/webhooks/webhooks.routes.js';
 import adminReportsRoutes from './modules/admin-reports/admin-reports.routes.js';
 import { cmsController } from './modules/cms/cms.controller.js';
+import { PublicFileStorageService } from './services/file-storage.service.js';
 
 const app = express();
 
@@ -62,6 +63,9 @@ app.get('/api/v1/health', (req, res) => {
     env: env.NODE_ENV,
   });
 });
+
+// Serve uploaded public files statically
+app.use('/storage/public', express.static(PublicFileStorageService.getRootDirectory()));
 
 // Public Homepage Endpoint
 app.get('/api/v1/public/home', cmsController.getPublicHome);

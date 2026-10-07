@@ -29,6 +29,7 @@ export async function authenticateAdmin(req, res, next) {
       id: sessionData.admin.id,
       email: sessionData.admin.email,
       authzVersion: sessionData.admin.authzVersion,
+      roles: sessionData.roles || [],
       permissions: Array.from(sessionData.permissions),
     };
 

@@ -90,4 +90,21 @@ export const mediaController = {
       next(err);
     }
   },
+
+  /**
+   * GET /api/v1/admin/media
+   */
+  async list(req, res, next) {
+    try {
+      const page = parseInt(req.query.page, 10) || 1;
+      const limit = parseInt(req.query.limit, 10) || 30;
+      const result = await mediaRepo.findAll({ page, limit });
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
 };

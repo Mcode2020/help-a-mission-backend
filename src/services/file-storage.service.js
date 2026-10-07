@@ -35,7 +35,7 @@ export class PublicFileStorageService {
 
     const relativePath = path.relative(root, targetPath).replace(/\\/g, '/');
     const sha256 = crypto.createHash('sha256').update(buffer).digest('hex');
-    const baseUrl = env.PUBLIC_UPLOAD_BASE_URL || 'https://files.example.org';
+    const baseUrl = env.PUBLIC_UPLOAD_BASE_URL || '/storage/public';
     const publicUrl = `${baseUrl.replace(/\/$/, '')}/${relativePath}`;
 
     return {
