@@ -14,6 +14,7 @@ import galleryRoutes from './modules/gallery/gallery.routes.js';
 import mediaRoutes from './modules/media/media.routes.js';
 import donationsRoutes from './modules/donations/donations.routes.js';
 import webhooksRoutes from './modules/webhooks/webhooks.routes.js';
+import userAuthRoutes from './modules/user-auth/user-auth.routes.js';
 import adminReportsRoutes from './modules/admin-reports/admin-reports.routes.js';
 import { cmsController } from './modules/cms/cms.controller.js';
 import { PublicFileStorageService } from './services/file-storage.service.js';
@@ -70,7 +71,9 @@ app.use('/storage/public', express.static(PublicFileStorageService.getRootDirect
 // Public Homepage Endpoint
 app.get('/api/v1/public/home', cmsController.getPublicHome);
 
-// API v1 Modules
+// API v1 User & Admin Auth Modules
+app.use('/api/v1/auth', userAuthRoutes);
+app.use('/api/auth', userAuthRoutes);
 app.use('/api/v1/admin/auth', adminAuthRoutes);
 app.use('/api/v1/admin/rbac', adminRbacRoutes);
 app.use('/api/v1', cmsRoutes);

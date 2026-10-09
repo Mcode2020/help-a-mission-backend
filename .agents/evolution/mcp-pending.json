@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-09T07:17:55Z",
+  "jobs": [
+    {
+      "script": "build-session-snapshot.py",
+      "job_type": "session-warm",
+      "status": "pending",
+      "enqueued_at": "2026-10-09T06:57:10Z",
+      "workspace": "D:\\Help-A-Mission-Welfare-Society\\help-a-mission-backend",
+      "job": {
+        "ok": true,
+        "runtime": "jsonl",
+        "queued_file": true
+      }
+    },
+    {
+      "script": "verify-gate.py",
+      "job_type": "script-run",
+      "status": "pending",
+      "enqueued_at": "2026-10-09T07:17:55Z",
+      "workspace": "D:\\Help-A-Mission-Welfare-Society\\help-a-mission-backend",
+      "job": {
+        "ok": true,
+        "runtime": "jsonl",
+        "queued_file": true
+      }
+    }
+  ]
+}

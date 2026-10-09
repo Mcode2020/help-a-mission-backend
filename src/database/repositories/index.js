@@ -5,6 +5,7 @@ export { RoleRepository } from './role.repo.js';
 export { PermissionRepository } from './permission.repo.js';
 export { AuditEventRepository } from './audit-event.repo.js';
 export { UserRepository } from './user.repo.js';
+export { UserSessionRepository } from './user-session.repo.js';
 export { DonationRepository } from './donation.repo.js';
 export { CmsPageRepository } from './cms.repo.js';
 export { InitiativeRepository } from './initiative.repo.js';
