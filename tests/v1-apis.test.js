@@ -58,6 +58,14 @@ test('NGO API v1 Complete Endpoints Integration Test Suite', async (t) => {
     assert.ok(Array.isArray(res.body.data));
   });
 
+  await t.test('4. Public Members Endpoint returns published members list and pagination', async () => {
+    const res = await request(app).get('/api/v1/public/members');
+    assert.equal(res.status, 200);
+    assert.equal(res.body.success, true);
+    assert.ok(Array.isArray(res.body.data));
+    assert.ok(res.body.meta.pagination);
+  });
+
   await t.test('4. POST /api/v1/donations/order creates donation order with Idempotency-Key', async () => {
     const idempotencyKey = `idemp_${Date.now()}`;
 

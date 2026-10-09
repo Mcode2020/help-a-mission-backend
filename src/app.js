@@ -16,6 +16,7 @@ import donationsRoutes from './modules/donations/donations.routes.js';
 import webhooksRoutes from './modules/webhooks/webhooks.routes.js';
 import userAuthRoutes from './modules/user-auth/user-auth.routes.js';
 import adminReportsRoutes from './modules/admin-reports/admin-reports.routes.js';
+import membersRoutes from './modules/members/members.routes.js';
 import { cmsController } from './modules/cms/cms.controller.js';
 import { PublicFileStorageService } from './services/file-storage.service.js';
 
@@ -82,6 +83,8 @@ app.use('/api/v1', galleryRoutes);
 app.use('/api/v1', mediaRoutes);
 app.use('/api/v1', donationsRoutes);
 app.use('/api/v1', adminReportsRoutes);
+app.use('/api/v1', membersRoutes);
+
 
 // 404 Route Handler
 app.use(notFoundHandler);

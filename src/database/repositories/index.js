@@ -12,3 +12,5 @@ export { InitiativeRepository } from './initiative.repo.js';
 export { GalleryRepository } from './gallery.repo.js';
 export { MediaAssetRepository } from './media.repo.js';
 export { JobRepository } from './job.repo.js';
+export { MemberRepository } from './member.repo.js';
+
