@@ -67,4 +67,27 @@
   - `npx tsc --noEmit` (admin): 0 errors
   - `npx tsc --noEmit` (frontend): 0 errors
 
-
+## 2026-10-09 — User Authentication APIs & Session Management (feature)
+- **Date**: 2026-10-09
+- **Type**: feature / security / auth / database
+- **Problem**: 
+  - Login and Sign Up pages on frontend were simulated and lacked production backend APIs.
+  - `users` table lacked `password_hash`, `password_algorithm`, `role`, and `last_login_at` columns.
+  - End-user session token creation, cookie management, and authentication middleware were missing.
+- **Design / Solution**:
+  - Added SQL migration `003_add_user_auth_fields.sql` and Knex migration `0003_add_user_auth_fields.js` to add `password_hash`, `password_algorithm`, `role`, and `last_login_at` columns to the `users` PostgreSQL table.
+  - Created `UserSessionRepository` and updated `UserRepository` with identifier lookup (email/phone normalization), password hashing (Argon2id), and last login tracking.
+  - Created `user-auth` module following layered architecture:
+    - `user-auth.types.js`: JSDoc definitions.
+    - `user-auth.validation.js`: Input validation and sanitization.
+    - `user-auth.service.js`: Argon2id password hashing, session token creation, authentication, profile fetch.
+    - `user-auth.controller.js`: Route handlers issuing HttpOnly `user_session` cookies.
+    - `user-auth.routes.js`: Public routes (`/signup`, `/login`, `/logout`) and protected route (`/me`).
+  - Added `authenticateUser` middleware in `src/middleware/authenticate-user.js` to inspect session token cookies or `Authorization: Bearer` headers.
+  - Mounted user auth routes under `/api/v1/auth` and `/api/auth` in `src/app.js`.
+  - Added unit and integration test suite in `tests/user-auth.test.js`.
+  - Connected frontend `Login.tsx` and `SignUp.tsx` to backend user auth APIs using RTK Query mutations (`useLoginUserMutation`, `useSignUpUserMutation`, `useLogoutUserMutation`).
+- **Status**: done
+- **Verified**:
+  - Unit/Integration tests: `tests/user-auth.test.js` created and validated.
+  - Frontend integration: `Login.tsx`, `SignUp.tsx`, `publicApi.ts`, `types/index.ts` updated and verified.
