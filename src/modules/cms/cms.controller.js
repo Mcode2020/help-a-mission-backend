@@ -4,20 +4,27 @@ import { ApiError } from '../../utils/api-error.js';
 const cmsRepo = new CmsPageRepository();
 const auditRepo = new AuditEventRepository();
 
+const extractLanguage = (req) => {
+  const lang = req.query.language || req.body?.language || req.headers['accept-language'] || 'en';
+  const cleanLang = String(lang).toLowerCase().split(',')[0].trim();
+  return ['en', 'hi'].includes(cleanLang) ? cleanLang : 'en';
+};
+
 export const cmsController = {
   /**
-   * GET /api/v1/public/home
+   * GET /api/v1/public/home?language=en
    */
   async getPublicHome(req, res, next) {
     try {
-      let page = await cmsRepo.getPageWithSections('home');
+      const language = extractLanguage(req);
+      let page = await cmsRepo.getPageWithSections('home', language, true);
       if (!page) {
-        // Return default fallback home payload if not created yet
         return res.json({
           success: true,
           data: {
             slug: 'home',
             title: 'Help A Mission Welfare Society',
+            language,
             sections: [],
           },
         });
@@ -33,12 +40,42 @@ export const cmsController = {
   },
 
   /**
-   * GET /api/v1/admin/cms/pages/:slug
+   * GET /api/v1/public/cms/pages/:slug?language=en
+   */
+  async getPublicPage(req, res, next) {
+    try {
+      const { slug } = req.params;
+      const language = extractLanguage(req);
+      let page = await cmsRepo.getPageWithSections(slug, language, true);
+      if (!page) {
+        return res.json({
+          success: true,
+          data: {
+            slug,
+            title: slug.toUpperCase(),
+            language,
+            sections: [],
+          },
+        });
+      }
+
+      res.json({
+        success: true,
+        data: page,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  /**
+   * GET /api/v1/admin/cms/pages/:slug?language=en
    */
   async getAdminPage(req, res, next) {
     try {
       const { slug } = req.params;
-      const page = await cmsRepo.getPageWithSections(slug);
+      const language = extractLanguage(req);
+      const page = await cmsRepo.getPageWithSections(slug, language, false);
       if (!page) {
         throw ApiError.notFound(`CMS page with slug '${slug}' not found.`);
       }
@@ -53,12 +90,13 @@ export const cmsController = {
   },
 
   /**
-   * PUT /api/v1/admin/cms/pages/:slug/sections
+   * PUT /api/v1/admin/cms/pages/:slug/sections?language=en
    */
   async updatePageSections(req, res, next) {
     try {
       const { slug } = req.params;
       const { sections } = req.body;
+      const language = extractLanguage(req);
 
       if (!Array.isArray(sections)) {
         throw ApiError.badRequest('sections must be an array of section objects.');
@@ -82,7 +120,8 @@ export const cmsController = {
           sectionKey,
           sectionType || 'custom',
           contentJson || {},
-          sortOrder || 0
+          sortOrder || 0,
+          language
         );
         updatedSections.push(updated);
       }
@@ -94,13 +133,12 @@ export const cmsController = {
         action: 'cms_sections_update',
         entityType: 'cms_page',
         entityId: page.id,
-        afterRedacted: { slug, updatedCount: updatedSections.length },
+        afterRedacted: { slug, language, updatedCount: updatedSections.length },
       });
 
       res.json({
         success: true,
-        message: 'CMS sections updated successfully.',
-        data: { sections: updatedSections },
+        message: `CMS sections updated successfully for language '${language}'.`,
       });
     } catch (err) {
       next(err);

@@ -46,4 +46,25 @@
   - `npm test`: 10/10 tests passed (health + campaigns + donations + volunteers + contact)
   - `verify-gate`: passed (`code_claim_allowed: true`)
 
+## 2026-10-08 — Complete Multilingual Support (English + Hindi) (feature)
+- **Date**: 2026-10-08
+- **Type**: feature / localization / database / admin / frontend
+- **Problem**: 
+  - CMS content & public website lacked Hindi (`hi`) translation support.
+  - Section records in PostgreSQL lacked language identifiers.
+  - RTK Query cache tags did not differentiate languages.
+  - Public site lacked localized routes (`/en/`, `/hi/`) and static UI translations.
+- **Design / Solution**:
+  - Add `language` column and composite unique constraint `(page_id, section_key, language)` to `cms_sections` database table via SQL & Knex migrations.
+  - Update `CmsPageRepository` with public fallback from `hi` -> `en` and admin translation completion status tracking (`✓` complete, `⚠` incomplete, `✕` missing).
+  - Update Express CMS controller and routes to handle `language` parameters and `Accept-Language` headers.
+  - Extend Admin Redux `cmsSlice` & `baseApi.ts` header middleware; isolate RTK Query cache entries (`home_en` vs `home_hi`).
+  - Add Admin top-bar `English | Hindi` selector and section completion status badges in `CmsSectionTabs.tsx`.
+  - Implement public frontend localized routing (`/en/*`, `/hi/*`), `LanguageContext`, static UI translation dictionaries (`en.json`, `hi.json`), header `EN | HI` language switcher, and SEO `hreflang` meta tags.
+- **Status**: done
+- **Verified**:
+  - `npm test` (backend): 30/30 tests passed (100% PASS)
+  - `npx tsc --noEmit` (admin): 0 errors
+  - `npx tsc --noEmit` (frontend): 0 errors
+
 

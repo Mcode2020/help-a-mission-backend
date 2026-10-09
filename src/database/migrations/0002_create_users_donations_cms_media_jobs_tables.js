@@ -115,6 +115,7 @@ export async function up(knex) {
     table.uuid('page_id').notNullable().references('id').inTable('cms_pages').onDelete('CASCADE');
     table.string('section_key', 64).notNullable();
     table.string('section_type', 64).notNullable();
+    table.string('language', 10).notNullable().defaultTo('en');
     table.integer('sort_order').notNullable().defaultTo(0);
     table.jsonb('content_json').notNullable();
     table.string('status', 32).notNullable().defaultTo('published');
@@ -122,7 +123,7 @@ export async function up(knex) {
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
 
-    table.unique(['page_id', 'section_key']);
+    table.unique(['page_id', 'section_key', 'language']);
   });
 
   // 9. Gallery Items Table
