@@ -1,17 +1,14 @@
 {
   "public_routes": [
     "/",
-    "/api/health",
-    "/api/health/",
-    "/api/donations/create-order",
-    "/api/donations/verify",
-    "/api/campaigns",
-    "/api/campaigns/",
-    "/api/campaigns/:slug",
-    "/api/volunteers",
-    "/api/volunteers/",
-    "/api/contact",
-    "/api/contact/"
+    "/api/v1/health",
+    "/api/v1/public/home",
+    "/api/v1/public/initiatives",
+    "/api/v1/public/initiatives/:slug",
+    "/api/v1/public/gallery",
+    "/api/v1/donations/order",
+    "/api/v1/donations/:id/status",
+    "/api/v1/webhooks/razorpay"
   ],
   "fail_on": "high"
 }
